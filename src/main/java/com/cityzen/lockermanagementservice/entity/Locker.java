@@ -22,7 +22,6 @@ public class Locker {
 
     @Indexed(unique = true)
     private String aadharNumber;
-
     private List<File> files = new ArrayList<>();
 
     @CreatedDate
