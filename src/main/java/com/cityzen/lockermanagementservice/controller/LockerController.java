@@ -1,6 +1,7 @@
 package com.cityzen.lockermanagementservice.controller;
 
 import com.cityzen.lockermanagementservice.clients.UserInterface;
+import com.cityzen.lockermanagementservice.dto.FileReponse;
 import com.cityzen.lockermanagementservice.dto.FileUploadDto;
 import com.cityzen.lockermanagementservice.entity.File;
 import com.cityzen.lockermanagementservice.entity.Locker;
@@ -9,6 +10,7 @@ import com.cityzen.lockermanagementservice.payload.CommonResponse;
 import com.cityzen.lockermanagementservice.payload.Status;
 import com.cityzen.lockermanagementservice.service.LockerService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.Path;
 import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -29,83 +31,42 @@ public class LockerController {
     @Autowired
     private UserInterface userInterface;
 
-    @GetMapping("/list-documents")
-    public ResponseEntity<CommonResponse<?>> findAll(@PathVariable String aadharNumber, HttpServletRequest request) {
-        try {
-            if (aadharNumber == null || aadharNumber.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new CommonResponse<>(Status.FAILED, null, "INVALID AADHAR", request.getRequestURI()));
-            }
-
-            ApiResponse<?> aadharExist = userInterface.getUserByAadharNumber(aadharNumber).getBody();
-
-            if(aadharExist == null) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new CommonResponse<>(Status.FAILED, aadharExist.getData(), "INTERNAL SERVER ERROR", request.getRequestURI()));
-            }
-
-            if(!(boolean)aadharExist.getData()){
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new CommonResponse<>(Status.FAILED, null, "NOT FOUND", request.getRequestURI()));
-            }
-
-            List<File> listFiles = lockerService.getList(aadharNumber);
-            if (listFiles == null || listFiles.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.ACCEPTED)
-                        .body(new CommonResponse<>(Status.ACCEPTED, new ArrayList<>(), "DOCUMENTS FILE :" + 0, request.getRequestURI()));
-            }
-
-            return ResponseEntity.status(HttpStatus.ACCEPTED)
-                    .body(new CommonResponse<>(Status.ACCEPTED, listFiles, "SUCCESS", request.getRequestURI()));
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new CommonResponse<>(Status.REJECTED, e, "INTERNAL_SERVER_ERROR :" + e.getMessage(), request.getRequestURI()));
-        }
-    }
-
     @PostMapping("/add")
-    public ResponseEntity<CommonResponse<?>> addDocument(@RequestPart MultipartFile file, @PathVariable String aadharNumber) {
-        String path = ServletUriComponentsBuilder.fromCurrentRequest().build().getPath();
+    public ResponseEntity<CommonResponse<?>> addDocument( @RequestBody FileUploadDto fileUploadDto, HttpServletRequest request) {
         try {
-            if (file == null || file.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new CommonResponse<>(Status.FAILED, null, "FILE IS EMPTY", path));
+
+
+            Long aadharNumber = Long.parseLong(fileUploadDto.getAadharNumber());
+            ApiResponse<?> aadharExist = userInterface.getUserByAadharNumber(Long.toString(aadharNumber)).getBody();
+            if(aadharExist == null) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new CommonResponse<>(Status.FAILED, aadharExist.getData(), aadharExist.getMessage(), request.getRequestURI()));
             }
-            File saved = lockerService.addDocument(file, aadharNumber);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(new CommonResponse<>(Status.ACCEPTED, saved, "FILE UPLOADED", path));
+
+            if(!(boolean)aadharExist.getData()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new CommonResponse<>(Status.FAILED, aadharExist.getData(), "NOT FOUND", request.getRequestURI()));
+            }
+
+            FileReponse fileResponse = lockerService.addDocument(fileUploadDto);
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body(new CommonResponse<>(Status.ACCEPTED, fileResponse, "FILE SAVED SUCCESSFULLY", request.getRequestURI()));
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new CommonResponse<>(Status.REJECTED, e, "INTERNAL_SERVER_ERROR :" + e.getMessage(), path));
+                    .body(new CommonResponse<>(Status.REJECTED, e.getMessage(), "INTERNAL_SERVER_ERROR :" + e.getMessage(), request.getRequestURI()));
         }
     }
 
-    @PutMapping("/update")
-    public ResponseEntity<CommonResponse<?>> updateDocument(@RequestPart MultipartFile file, @PathVariable String aadharNumber, @PathVariable Long fileId) {
-        String path = ServletUriComponentsBuilder.fromCurrentRequest().build().getPath();
+
+    @GetMapping("/listDocument/{aadharNumber}")
+    public ResponseEntity<CommonResponse<?>> listDocument(@PathVariable("aadharNumber") String aadharNumber, HttpServletRequest request) {
         try {
-            if (file == null || file.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new CommonResponse<>(Status.FAILED, null, "FILE IS EMPTY", path));
-            }
-            File updated = lockerService.updateDocument(file, aadharNumber, fileId);
-            return ResponseEntity.status(HttpStatus.ACCEPTED)
-                    .body(new CommonResponse<>(Status.ACCEPTED, updated, "FILE UPDATED", path));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new CommonResponse<>(Status.REJECTED, e, "INTERNAL_SERVER_ERROR :" + e.getMessage(), path));
+            List<File> file = lockerService.getList(aadharNumber);
+            return ResponseEntity.ok(new CommonResponse<>(Status.ACCEPTED, file, "FILE LIST SUCCESSFULLY", request.getRequestURI()));
+
+        }
+        catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new CommonResponse<>(Status.REJECTED, e, "INTERNAL_SERVER_ERROR :" + e.getMessage(), request.getRequestURI()));
         }
     }
 
-    @DeleteMapping("/delete")
-    public ResponseEntity<CommonResponse<?>> deleteDocument(@PathVariable String aadharNumber, @PathVariable Long fileId) {
-        String path = ServletUriComponentsBuilder.fromCurrentRequest().build().getPath();
-        try {
-            lockerService.deletedDocument(aadharNumber, fileId);
-            return ResponseEntity.status(HttpStatus.ACCEPTED)
-                    .body(new CommonResponse<>(Status.ACCEPTED, null, "Deleted successfully", path));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new CommonResponse<>(Status.REJECTED, e, "INTERNAL_SERVER_ERROR :" + e.getMessage(), path));
-        }
-    }
+
 }

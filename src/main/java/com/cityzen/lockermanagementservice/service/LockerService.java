@@ -1,6 +1,8 @@
 package com.cityzen.lockermanagementservice.service;
 
 
+import com.cityzen.lockermanagementservice.dto.FileReponse;
+import com.cityzen.lockermanagementservice.dto.FileUploadDto;
 import com.cityzen.lockermanagementservice.entity.File;
 import com.cityzen.lockermanagementservice.entity.Locker;
 import com.cityzen.lockermanagementservice.repository.LockerRepo;
@@ -15,7 +17,7 @@ import java.util.List;
 public class LockerService {
 
     @Autowired
-    private LockerRepo lockerRepo;
+    private  LockerRepo lockerRepo;
 
 
     public List<File> getList(String aadharNumber) {
@@ -23,59 +25,27 @@ public class LockerService {
         return locker.getFiles();
     }
 
-    public File addDocument(MultipartFile file, String aadharNumber) {
-        Locker locker = lockerRepo.findByAadharNumber(aadharNumber).orElseGet(() -> {
+
+
+    public FileReponse addDocument(FileUploadDto userLocker) {
+        Locker locker = lockerRepo.findByAadharNumber(userLocker.getAadharNumber()).orElseGet(() -> {
             Locker newLocker = new Locker();
-            newLocker.setAadharNumber(aadharNumber);
+            newLocker.setAadharNumber(userLocker.getAadharNumber());
             return lockerRepo.save(newLocker);
         });
-        File uploadedFile = null;
-        locker.getFiles().add(uploadedFile);
+        File file = File.builder()
+                .fileName(userLocker.getFileName())
+                .filePath(userLocker.getFilePath())
+                .build();
+
+        locker.getFiles().add(file);
         lockerRepo.save(locker);
-        return uploadedFile;
+        return FileReponse.builder()
+                .id(file.getFileId())
+                .fileName(file.getFileName())
+                .filePath(file.getFilePath())
+                .creationDate(file.getCreationDate())
+                .build();
     }
 
-
-
-    public File updateDocument(MultipartFile file, String aadharNumber, Long fileId) {
-        Locker locker = lockerRepo.findByAadharNumber(aadharNumber).orElse(null);
-        if(locker == null){
-            return null;
-        }
-        File targetFile = null;
-        for(File f : locker.getFiles()){
-            if(f.getId().equals(fileId)){
-                targetFile = f;
-                break;
-            }
-        }
-
-        if (targetFile == null) {
-            throw new RuntimeException("File not found");
-        }
-
-        File uploadFile = null;
-        targetFile.setFileName(uploadFile.getFileName());
-        targetFile.setFilePath(uploadFile.getFilePath());
-        targetFile.setUploadedAt(Instant.now());
-        lockerRepo.save(locker);
-
-        return targetFile;
-
-    }
-
-
-    public void deletedDocument(String aadharNumber, Long fileId) {
-        Locker locker = lockerRepo.findByAadharNumber(aadharNumber)
-                .orElseThrow(() -> new RuntimeException("Locker not found"));
-
-        for (int i = 0; i < locker.getFiles().size(); i++) {
-            if (locker.getFiles().get(i).getId().equals(fileId)) {
-                locker.getFiles().remove(i);
-                lockerRepo.save(locker);
-                return;
-            }
-        }
-        throw new RuntimeException("File not found");
-    }
 }
