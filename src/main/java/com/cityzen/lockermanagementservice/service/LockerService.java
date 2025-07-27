@@ -36,6 +36,7 @@ public class LockerService {
         File file = File.builder()
                 .fileName(userLocker.getFileName())
                 .filePath(userLocker.getFilePath())
+                .creationDate(Instant.now())
                 .build();
 
         locker.getFiles().add(file);

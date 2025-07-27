@@ -22,6 +22,8 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.util.ArrayList;
 import java.util.List;
 
+
+@CrossOrigin
 @RestController
 @RequestMapping("/api/lock/")
 public class LockerController {
