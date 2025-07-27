@@ -1,12 +1,15 @@
 package com.cityzen.lockermanagementservice.controller;
 
+import com.cityzen.lockermanagementservice.clients.UserInterface;
 import com.cityzen.lockermanagementservice.dto.FileUploadDto;
 import com.cityzen.lockermanagementservice.entity.File;
 import com.cityzen.lockermanagementservice.entity.Locker;
+import com.cityzen.lockermanagementservice.payload.ApiResponse;
 import com.cityzen.lockermanagementservice.payload.CommonResponse;
 import com.cityzen.lockermanagementservice.payload.Status;
 import com.cityzen.lockermanagementservice.service.LockerService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +26,9 @@ public class LockerController {
     @Autowired
     private LockerService lockerService;
 
+    @Autowired
+    private UserInterface userInterface;
+
     @GetMapping("/list-documents")
     public ResponseEntity<CommonResponse<?>> findAll(@PathVariable String aadharNumber, HttpServletRequest request) {
         try {
@@ -30,6 +36,17 @@ public class LockerController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new CommonResponse<>(Status.FAILED, null, "INVALID AADHAR", request.getRequestURI()));
             }
+
+            ApiResponse<?> aadharExist = userInterface.getUserByAadharNumber(aadharNumber).getBody();
+
+            if(aadharExist == null) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new CommonResponse<>(Status.FAILED, aadharExist.getData(), "INTERNAL SERVER ERROR", request.getRequestURI()));
+            }
+
+            if(!(boolean)aadharExist.getData()){
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new CommonResponse<>(Status.FAILED, null, "NOT FOUND", request.getRequestURI()));
+            }
+
             List<File> listFiles = lockerService.getList(aadharNumber);
             if (listFiles == null || listFiles.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.ACCEPTED)
