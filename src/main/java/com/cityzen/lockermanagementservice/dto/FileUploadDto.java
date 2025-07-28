@@ -12,6 +12,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class FileUploadDto {
 
+
+    private String fileId;
+
     @NotBlank
     @Pattern(regexp = "^\\d{12}$", message = "Aadhar must be 12 digits")
     private String aadharNumber;
