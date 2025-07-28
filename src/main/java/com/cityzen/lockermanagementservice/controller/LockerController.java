@@ -29,7 +29,10 @@ public class LockerController {
         this.userInterface = userInterface;
     }
 
+
+
     @PostMapping("/add")
+
     public ResponseEntity<CommonResponse<?>> addDocument(@RequestBody FileUploadDto fileUploadDto,
                                                          HttpServletRequest request) {
         try {
