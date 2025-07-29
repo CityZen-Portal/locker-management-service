@@ -74,9 +74,13 @@ public class LockerController {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<CommonResponse<?>> updateDocument(@RequestBody FileUploadDto fileUploadDto,
+    public ResponseEntity<CommonResponse<?>> updateDocument(@RequestHeader("token") String token, @RequestBody FileUploadDto fileUploadDto,
                                                             HttpServletRequest request) {
         try {
+            TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
+            if(!tokenResponseDto.isValid()){
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new CommonResponse<>(Status.ACCEPTED, null, "UNAUTHORIZED USER", request.getRequestURI()));
+            }
             validateAadharWithUserService(fileUploadDto.getAadharNumber(), request);
 
             FileReponse file = lockerService.updateDocument(fileUploadDto);
@@ -91,10 +95,15 @@ public class LockerController {
     }
 
     @DeleteMapping("/delete/{aadharNumber}/{fileId}")
-    public ResponseEntity<CommonResponse<?>> deleteDocument(@PathVariable String aadharNumber,
+    public ResponseEntity<CommonResponse<?>> deleteDocument (@RequestHeader("token") String token ,@PathVariable String aadharNumber,
                                                             @PathVariable String fileId,
                                                             HttpServletRequest request) {
         try {
+
+            TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
+            if(!tokenResponseDto.isValid()){
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new CommonResponse<>(Status.ACCEPTED, null, "UNAUTHORIZED USER", request.getRequestURI()));
+            }
             validateAadharWithUserService(aadharNumber, request);
 
             lockerService.deleteDocument(aadharNumber, fileId);
