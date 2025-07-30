@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 
 
-@FeignClient(name = "UserManagementService", url = "${user.service.url}")
+@FeignClient(name = "UserManagementService", url = "https://auth-backend-cpcr.onrender.com")
 public interface UserInterface {
 
     @GetMapping("/api/auth/userInfo/{aadharNumber}")
