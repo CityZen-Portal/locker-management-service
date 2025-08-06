@@ -37,11 +37,12 @@ public class LockerController {
     public ResponseEntity<CommonResponse<?>> addDocument(@RequestHeader("token") String token, @RequestBody FileUploadDto fileUploadDto,
                                                          HttpServletRequest request) {
         try {
-            TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-            if(!tokenResponseDto.isValid()){
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new CommonResponse<>(Status.ACCEPTED, null, "UNAUTHORIZED USER", request.getRequestURI()));
-            }
-            validateAadharWithUserService(fileUploadDto.getAadharNumber(), request);
+//            System.out.print(token);
+//            TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
+//            if(!tokenResponseDto.isValid()){
+//                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new CommonResponse<>(Status.ACCEPTED, null, "UNAUTHORIZED USER", request.getRequestURI()));
+//            }
+//            validateAadharWithUserService(fileUploadDto.getAadharNumber(), request);
             FileReponse fileResponse = lockerService.addDocument(fileUploadDto);
             return ResponseEntity.status(HttpStatus.ACCEPTED)
                     .body(new CommonResponse<>(Status.ACCEPTED, fileResponse, "FILE SAVED SUCCESSFULLY", request.getRequestURI()));
@@ -56,13 +57,15 @@ public class LockerController {
     }
 
     @GetMapping("/listDocument/{aadharNumber}")
-    public ResponseEntity<CommonResponse<?>> listDocument( @RequestHeader("token") String token, @PathVariable("aadharNumber") String aadharNumber,
+    public ResponseEntity<CommonResponse<?>> listDocument( @RequestHeader("token") String auth, @PathVariable("aadharNumber") String aadharNumber,
                                                           HttpServletRequest request) {
         try {
-            TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-            if(!tokenResponseDto.isValid()){
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new CommonResponse<>(Status.ACCEPTED, null, "UNAUTHORIZED USER", request.getRequestURI()));
-            }
+//            String token = auth.substring(7);
+//            System.out.print(token);
+//            TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
+//            if(!tokenResponseDto.isValid()){
+//                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new CommonResponse<>(Status.ACCEPTED, null, "UNAUTHORIZED USER", request.getRequestURI()));
+//            }
             List<File> files = lockerService.getList(aadharNumber);
             return ResponseEntity.ok(new CommonResponse<>(Status.ACCEPTED, files, "FILE LIST SUCCESSFULLY", request.getRequestURI()));
         } catch (EntityNotFoundException ex) {
@@ -78,11 +81,11 @@ public class LockerController {
     public ResponseEntity<CommonResponse<?>> updateDocument(@RequestHeader("token") String token, @RequestBody FileUploadDto fileUploadDto,
                                                             HttpServletRequest request) {
         try {
-            TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-            if(!tokenResponseDto.isValid()){
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new CommonResponse<>(Status.ACCEPTED, null, "UNAUTHORIZED USER", request.getRequestURI()));
-            }
-            validateAadharWithUserService(fileUploadDto.getAadharNumber(), request);
+//            TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
+//            if(!tokenResponseDto.isValid()){
+//                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new CommonResponse<>(Status.ACCEPTED, null, "UNAUTHORIZED USER", request.getRequestURI()));
+//            }
+//            validateAadharWithUserService(fileUploadDto.getAadharNumber(), request);
 
             FileReponse file = lockerService.updateDocument(fileUploadDto);
             return ResponseEntity.ok(new CommonResponse<>(Status.ACCEPTED, file, "FILE UPDATED SUCCESSFULLY", request.getRequestURI()));
@@ -101,11 +104,11 @@ public class LockerController {
                                                             HttpServletRequest request) {
         try {
 
-            TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-            if(!tokenResponseDto.isValid()){
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new CommonResponse<>(Status.ACCEPTED, null, "UNAUTHORIZED USER", request.getRequestURI()));
-            }
-            validateAadharWithUserService(aadharNumber, request);
+//            TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
+//            if(!tokenResponseDto.isValid()){
+//                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new CommonResponse<>(Status.ACCEPTED, null, "UNAUTHORIZED USER", request.getRequestURI()));
+//            }
+//            validateAadharWithUserService(aadharNumber, request);
 
             lockerService.deleteDocument(aadharNumber, fileId);
             return ResponseEntity.ok(new CommonResponse<>(Status.ACCEPTED, null, "FILE DELETED SUCCESSFULLY", request.getRequestURI()));
@@ -133,4 +136,5 @@ public class LockerController {
             throw new javax.persistence.EntityNotFoundException("AADHAR NOT FOUND");
         }
     }
+
 }
