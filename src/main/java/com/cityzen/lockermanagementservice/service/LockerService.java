@@ -10,10 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityNotFoundException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @Transactional
@@ -25,7 +22,6 @@ public class LockerService {
         this.lockerRepo = lockerRepo;
     }
 
-    @Transactional(readOnly = true)
     public List<File> getList(String aadharNumber) {
         Optional<Locker> locker = lockerRepo.findByAadharNumber(aadharNumber);
         if(locker.isEmpty()){
