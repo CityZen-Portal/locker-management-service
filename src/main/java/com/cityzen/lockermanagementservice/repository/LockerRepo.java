@@ -8,6 +8,6 @@ import java.util.Optional;
 
 
 @Repository
-public interface LockerRepo extends MongoRepository<Locker, Long> {
+public interface LockerRepo extends MongoRepository<Locker, String> {
     Optional<Locker> findByAadharNumber(String aadharNumber);
 }
