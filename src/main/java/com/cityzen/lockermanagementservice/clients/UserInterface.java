@@ -13,4 +13,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 public interface UserInterface {
     @GetMapping("/api/auth/userInfo/{aadharNumber}")
     ResponseEntity<ApiResponse<?>> getUserByAadharNumber(@PathVariable String aadharNumber);
+
+
 }
