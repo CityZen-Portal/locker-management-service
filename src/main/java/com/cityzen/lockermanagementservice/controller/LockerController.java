@@ -10,6 +10,7 @@ import com.cityzen.lockermanagementservice.payload.CommonResponse;
 import com.cityzen.lockermanagementservice.payload.Status;
 import com.cityzen.lockermanagementservice.service.LockerService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.el.parser.Token;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +36,16 @@ public class LockerController {
                                                          HttpServletRequest request) {
         try {
 
+            if(token.isEmpty()){
+                ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(404, "Token is Missing", null, request.getRequestURI()));
+
+            }
+            TokenResponseDto tokenResponse =  userInterface.validateUser(token).getBody();
+            if(tokenResponse.isValid() == false){
+                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new CommonResponse<>(Status.REJECTED,  null,"Login Again or Try Again Later", request.getRequestURI()));
+            }
+            System.out.println("TOKEN AUTHENTICATED");
+
             FileReponse fileResponse = lockerService.addDocument(fileUploadDto);
             return ResponseEntity.status(HttpStatus.ACCEPTED)
                     .body(new CommonResponse<>(Status.ACCEPTED, fileResponse, "FILE SAVED SUCCESSFULLY", request.getRequestURI()));
@@ -52,6 +63,15 @@ public class LockerController {
     public ResponseEntity<CommonResponse<?>> listDocument( @RequestHeader("token") String auth, @PathVariable("aadharNumber") String aadharNumber,
                                                           HttpServletRequest request) {
         try {
+            if(auth.isEmpty()){
+                ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(404, "Token is Missing", null, request.getRequestURI()));
+
+            }
+            TokenResponseDto tokenResponse =  userInterface.validateUser(auth).getBody();
+            if(tokenResponse.isValid() == false){
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new CommonResponse<>(Status.REJECTED,  null,"Login Again or Try Again Later", request.getRequestURI()));
+            }
+            System.out.println("TOKEN AUTHENTICATED");
 
             List<File> files = lockerService.getList(aadharNumber);
             return ResponseEntity.ok(new CommonResponse<>(Status.ACCEPTED, files, "FILE LIST SUCCESSFULLY", request.getRequestURI()));
@@ -68,6 +88,16 @@ public class LockerController {
     public ResponseEntity<CommonResponse<?>> updateDocument(@RequestHeader("token") String token, @RequestBody FileUploadDto fileUploadDto,
                                                             HttpServletRequest request) {
         try {
+            if(token.isEmpty()){
+                ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(404, "Token is Missing", null, request.getRequestURI()));
+
+            }
+            TokenResponseDto tokenResponse =  userInterface.validateUser(token).getBody();
+            if(tokenResponse.isValid() == false){
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new CommonResponse<>(Status.REJECTED,  null,"Login Again or Try Again Later", request.getRequestURI()));
+            }
+            System.out.println("TOKEN AUTHENTICATED");
+
 
             FileReponse file = lockerService.updateDocument(fileUploadDto);
             return ResponseEntity.ok(new CommonResponse<>(Status.ACCEPTED, file, "FILE UPDATED SUCCESSFULLY", request.getRequestURI()));
@@ -85,6 +115,16 @@ public class LockerController {
                                                             @PathVariable String fileId,
                                                             HttpServletRequest request) {
         try {
+
+            if(token.isEmpty()){
+                ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(404, "Token is Missing", null, request.getRequestURI()));
+
+            }
+            TokenResponseDto tokenResponse =  userInterface.validateUser(token).getBody();
+            if(tokenResponse.isValid() == false){
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new CommonResponse<>(Status.REJECTED,  null,"Login Again or Try Again Later", request.getRequestURI()));
+            }
+            System.out.println("TOKEN AUTHENTICATED");
 
             lockerService.deleteDocument(aadharNumber, fileId);
             return ResponseEntity.ok(new CommonResponse<>(Status.ACCEPTED, null, "FILE DELETED SUCCESSFULLY", request.getRequestURI()));

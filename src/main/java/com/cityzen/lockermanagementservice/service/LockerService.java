@@ -5,12 +5,16 @@ import com.cityzen.lockermanagementservice.dto.FileUploadDto;
 import com.cityzen.lockermanagementservice.entity.File;
 import com.cityzen.lockermanagementservice.entity.Locker;
 import com.cityzen.lockermanagementservice.repository.LockerRepo;
+import com.cityzen.lockermanagementservice.utils.EncryptionUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityNotFoundException;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -23,11 +27,27 @@ public class LockerService {
     }
 
     public List<File> getList(String aadharNumber) {
-        Optional<Locker> locker = lockerRepo.findByAadharNumber(aadharNumber);
-        if(locker.isEmpty()){
+        Optional<Locker> lockerOpt = lockerRepo.findByAadharNumber(aadharNumber);
+
+        if (lockerOpt.isEmpty()) {
             return new ArrayList<>();
         }
-        return locker.get().getFiles();
+
+        Locker locker = lockerOpt.get();
+
+        for (File file : locker.getFiles()) {
+            try {
+                if (isProbablyEncrypted(file.getFilePath())) {
+                    String decryptedPath = EncryptionUtil.decrypt(file.getFilePath());
+                    file.setFilePath(decryptedPath);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Error decrypting file path", e);
+            }
+        }
+
+
+        return locker.getFiles();
     }
 
     public FileReponse addDocument(FileUploadDto dto) {
@@ -37,9 +57,16 @@ public class LockerService {
             return lockerRepo.save(newLocker);
         });
 
+        String encryptedFilePath;
+        try {
+            encryptedFilePath = EncryptionUtil.encrypt(dto.getFilePath());
+        } catch (Exception e) {
+            throw new RuntimeException("Error encrypting file path", e);
+        }
+
         File file = File.builder()
                 .fileName(dto.getFileName())
-                .filePath(dto.getFilePath())
+                .filePath(encryptedFilePath)
                 .creationDate(Instant.now())
                 .build();
 
@@ -49,7 +76,7 @@ public class LockerService {
         return FileReponse.builder()
                 .id(file.getFileId())
                 .fileName(file.getFileName())
-                .filePath(file.getFilePath())
+                .filePath(dto.getFilePath())
                 .creationDate(file.getCreationDate())
                 .build();
     }
@@ -71,7 +98,12 @@ public class LockerService {
             file.setFileName(dto.getFileName());
         }
         if (dto.getFilePath() != null && !dto.getFilePath().isBlank()) {
-            file.setFilePath(dto.getFilePath());
+            try {
+                String encryptedPath = EncryptionUtil.encrypt(dto.getFilePath());
+                file.setFilePath(encryptedPath);
+            } catch (Exception e) {
+                throw new RuntimeException("Error encrypting file path", e);
+            }
         }
 
         lockerRepo.save(locker);
@@ -79,10 +111,20 @@ public class LockerService {
         return FileReponse.builder()
                 .id(file.getFileId())
                 .fileName(file.getFileName())
-                .filePath(file.getFilePath())
+                .filePath(dto.getFilePath() != null ? dto.getFilePath() : null) // return plain path
                 .creationDate(file.getCreationDate())
                 .build();
     }
+
+    private boolean isProbablyEncrypted(String value) {
+        try {
+            byte[] decoded = java.util.Base64.getDecoder().decode(value);
+            return decoded.length > 12;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
 
     public void deleteDocument(String aadharNumber, String fileId) {
         Locker locker = lockerRepo.findByAadharNumber(aadharNumber)
